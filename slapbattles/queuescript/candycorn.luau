@@ -7,7 +7,7 @@ repeat wait() until game.Players.LocalPlayer
 queueonteleport = queueonteleport or queue_on_teleport
 if queueonteleport then
     queueonteleport([[
-		loadstring(game:HttpGet("https://pastefy.app/RElPcVF0/raw"))()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/grasserf/public/refs/heads/main/slapbattles/queuescript/candycorn.luau"))()
 	]])
 else
 	game:GetService("StarterGui"):SetCore("SendNotification",{Title = "Error",Text = "You doesn't support queueonteleport",Icon = "rbxassetid://7733658504",Duration = 5})
