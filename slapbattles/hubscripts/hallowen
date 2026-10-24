@@ -1,0 +1,774 @@
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+pcall(function()
+    workspace.Arena.Halloween_Decorations.Main.BigHay.KillParts.Killpart:Destroy()
+end)
+
+game:GetService("GuiService"):ClearError()
+
+local GloveStands, Portal, BarzilPortal
+pcall(function()
+    GloveStands, Portal, BarzilPortal = loadstring(game:HttpGet("https://raw.githubusercontent.com/Donjosx/GenZ/refs/heads/main/LobbyName.lua", true))()
+end)
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+
+local function AntiBarriers(value)
+    pcall(function()
+        local cube = workspace.Arena.CubeOfDeathArea:FindFirstChild("the cube of death(i heard it kills)")
+        if cube then
+            cube.CanTouch = not value
+        end
+        for _, v in pairs(workspace.DEATHBARRIER:GetChildren()) do
+            if v.ClassName == "Part" and v.Name == "BLOCK" then
+                v.CanTouch = not value
+            end
+        end
+        workspace.DEATHBARRIER.CanTouch = not value
+        workspace.DEATHBARRIER2.CanTouch = not value
+        for _, v in pairs(workspace.Lobby.LobbyFrame:GetDescendants()) do
+            if v.ClassName == "Script" then
+                v.Parent.CanTouch = not value
+            end
+        end
+    end)
+end
+
+local function GetGloveEquipCloseButtonUI()
+    for _, v in pairs(LocalPlayer.PlayerGui:GetChildren()) do
+        if v:FindFirstChild("GloveRentWindow")
+            and v.GloveRentWindow:FindFirstChild("Content")
+            and v.GloveRentWindow.Content:FindFirstChild("CloseButton")
+        then
+            return v.GloveRentWindow.Content.CloseButton
+        end
+    end
+    return nil
+end
+
+pcall(function()
+    local flags = require(ReplicatedStorage.BACKEND.Shared.Flags.FlagService)
+    local orig = flags.IsEnabled
+    flags.IsEnabled = function(flag, ...)
+        if flag == "IgnoreSafety" then
+            return true
+        end
+        return orig(flag, ...)
+    end
+end)
+
+local function EquipGlove(name)
+    fireclickdetector(workspace.Lobby[name].ClickDetector)
+    local button = GetGloveEquipCloseButtonUI()
+    spawn(function()
+        wait(0.1)
+        button.Parent.Parent.Visible = false
+    end)
+end
+
+local function HasGlove_Function(name)
+    if LocalPlayer.leaderstats.Glove.Value == name then
+        return true
+    end
+    EquipGlove(name)
+    if LocalPlayer:FindFirstChild("_unlockedGloves") then
+        if LocalPlayer._unlockedGloves:FindFirstChild(name) and LocalPlayer._unlockedGloves[name].Value == true then
+            return true
+        end
+        return false
+    end
+    wait(0.5)
+    return LocalPlayer.leaderstats.Glove.Value == name
+end
+
+local function HasGlove_ForToggle(enable, name, val, toggleval)
+    if not enable then
+        if toggleval then
+            toggleval(false)
+        end
+        return false
+    end
+    if HasGlove_Function(name) then
+        return true
+    end
+    if OrionLib then
+        OrionLib:MakeNotification({Name = "Error", Content = "You don't have " .. name .. " glove.", Image = "rbxassetid://7733658504", Time = 5})
+    end
+    if val then
+        val:Set(false)
+    end
+    if toggleval then
+        toggleval(false)
+    end
+    return false
+end
+
+local function EnterArena(ve)
+	local Portal = ve and workspace.Lobby.Teleport2 or workspace.Lobby.Teleport1
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("entered") == nil then
+        if firetouchinterest then
+            repeat
+                firetouchinterest(LocalPlayer.Character:WaitForChild("Head"), Portal, 0)
+                firetouchinterest(LocalPlayer.Character:WaitForChild("Head"), Portal, 1)
+                task.wait()
+            until LocalPlayer.Character:FindFirstChild("entered")
+        else
+            repeat
+                LocalPlayer.Character.HumanoidRootPart.CFrame = Portal.CFrame
+                task.wait()
+            until LocalPlayer.Character:FindFirstChild("entered")
+        end
+    end
+end
+
+local function GetRandomPlayer()
+    local validPlayers = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        local char = player.Character
+        if player ~= LocalPlayer and char
+            and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0
+            and char:FindFirstChild("entered")
+            and char:FindFirstChild("Head")
+            and (not char:FindFirstChild("IsInDefaultArena") or char.IsInDefaultArena.Value ~= true)
+            and char:FindFirstChild("HumanoidRootPart")
+            and not char:FindFirstChild("rock")
+            and not char:FindFirstChild("stevebody")
+            and not char.Head:FindFirstChild("UnoReverseCard")
+            and not char:FindFirstChild("stone")
+            and char:FindFirstChild("Ragdolled")
+            and char.Humanoid.FloorMaterial ~= Enum.Material.Air
+        then
+            local y = char.HumanoidRootPart.Position.Y
+            if y > -7 and y < 250 then
+                table.insert(validPlayers, player)
+            end
+        end
+    end
+    if #validPlayers > 0 then
+        return validPlayers[math.random(1, #validPlayers)]
+    end
+    return nil
+end
+
+local KillstreakFarm_Flag
+local function StartKSfarm(value)
+    local function SlapPlayer(plr)
+        local char = plr.Character
+        if char then
+            local part = char:FindFirstChildWhichIsA("BasePart")
+            ReplicatedStorage.KSHit:FireServer(part)
+        end
+        wait()
+    end
+
+    local safeSpot = Instance.new("Part", workspace)
+    safeSpot.Position = Vector3.new(math.random(1, 1000), 10000, math.random(1, 1000))
+    safeSpot.Name = "SafeSpotFlatPart"
+    safeSpot.Size = Vector3.new(1000, 5, 1000)
+    safeSpot.Anchored = true
+    safeSpot.Transparency = 1
+    safeSpot.CanCollide = true
+
+    if value then
+        spawn(function()
+            while value do
+                for _, v in pairs(Players:GetChildren()) do
+                    if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("stevebody") then
+                        local sb = v.Character.stevebody
+                        sb.CanTouch = false
+                        sb.CanQuery = false
+                        sb.CanCollide = false
+                    end
+                end
+                for _, v in pairs(workspace:GetChildren()) do
+                    if string.find(v.Name, "_lure") and v:FindFirstChild("Root") and v:FindFirstChild("watercircle") then
+                        v.Root.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+                        v.watercircle.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+                    end
+                end
+                wait(0.5)
+            end
+        end)
+    end
+
+    AntiBarriers(value)
+    KillstreakFarm_Flag = value
+
+    if KillstreakFarm_Flag == true then
+        if game.PlaceId ~= 11520107397 then
+            if LocalPlayer.leaderstats.Glove.Value ~= "Killstreak" then
+                fireclickdetector(workspace.Lobby.Killstreak.ClickDetector)
+            end
+        end
+        EnterArena()
+    else
+        if LocalPlayer.Character.HumanoidRootPart:FindFirstChildWhichIsA("BodyVelocity") then
+            LocalPlayer.Character.HumanoidRootPart:FindFirstChildWhichIsA("BodyVelocity"):Destroy()
+            for _ = 1, 10 do
+                wait(0.01)
+                LocalPlayer.Character:PivotTo(workspace.Origo.CFrame * CFrame.new(0, 15, 0))
+            end
+        end
+    end
+
+    while KillstreakFarm_Flag == true do
+        if not LocalPlayer.Character
+            or not LocalPlayer.Character:FindFirstChild("Humanoid")
+            or LocalPlayer.Character.Health == 0
+            or not LocalPlayer.Character:FindFirstChild("entered")
+        then
+            break
+        end
+
+        if not LocalPlayer.Character.HumanoidRootPart:FindFirstChild("bv") then
+            if LocalPlayer.Character.HumanoidRootPart:FindFirstChildWhichIsA("BodyVelocity") then
+                LocalPlayer.Character.HumanoidRootPart:FindFirstChildWhichIsA("BodyVelocity"):Destroy()
+            end
+            local bv = Instance.new("BodyVelocity", LocalPlayer.Character.HumanoidRootPart)
+            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bv.Velocity = Vector3.new(0, 0, 0)
+            bv.Name = "bv"
+        end
+        LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+
+        local target = GetRandomPlayer()
+
+        if target then
+            if target.Character and target.Character:FindFirstChild("Humanoid") and target.Character.Humanoid.Health > 0 then
+                print("Target Player: " .. target.Name)
+                for _ = 1, 10 do
+                    if target.Character:FindFirstChild("HumanoidRootPart") then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(5, 5, 0)
+                        local hrp = LocalPlayer.Character.HumanoidRootPart
+                        local charPos = hrp.Position
+                        local dirToOrigo = Vector3.new(0, 0, 0) - charPos
+                        local oppositeDir = -dirToOrigo
+                        oppositeDir = Vector3.new(oppositeDir.X, 0, oppositeDir.Z).Unit
+                        hrp.CFrame = CFrame.lookAt(hrp.Position, hrp.Position + oppositeDir)
+                    end
+                    wait(0.001)
+                end
+                SlapPlayer(target)
+                wait(0.001)
+                LocalPlayer.Character.HumanoidRootPart.CFrame = safeSpot.CFrame * CFrame.new(0, 10, 0)
+                wait()
+            end
+        else
+            LocalPlayer.Character.HumanoidRootPart.CFrame = safeSpot.CFrame * CFrame.new(0, 10, 0)
+            wait(0.1)
+        end
+        wait(0.2)
+    end
+end
+
+local function SHOP()
+    task.spawn(function()
+        local httprequest = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+        if not httprequest then
+            LocalPlayer:Kick("Your executor cannot run rejoin script")
+            return
+        end
+        local servers = {}
+        local req = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true")
+        local body = game:GetService("HttpService"):JSONDecode(req)
+        if body and body.data then
+            for _, v in next, body.data do
+                if type(v) == "table" and tonumber(v.playing) and tonumber(v.maxPlayers) and v.playing < v.maxPlayers and v.id ~= game.JobId then
+                    table.insert(servers, 1, v.id)
+                end
+            end
+        end
+        if #servers > 0 then
+            game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer)
+        else
+            wait()
+        end
+    end)
+end
+
+OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/Giangplay/Script/main/Orion_Library_PE_V2.lua"))()
+local GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+local Window = OrionLib:MakeWindow({IntroText = "Hallowen GUI", IntroIcon = "rbxassetid://15315284749", Name = ("Halloween GUI | " .. GameName), IntroToggleIcon = "rbxassetid://7734091286", HidePremium = false, SaveConfig = false, IntroEnabled = true, ConfigFolder = "slap battles"})
+
+if game.PlaceId == 6403373529 or game.PlaceId == 9015014224 or game.PlaceId == 11520107397 or game.PlaceId == 124596094333302 then
+
+    local bypass
+    bypass = hookmetamethod(game, "__namecall", function(method, ...)
+        if getnamecallmethod() == "FireServer" and (method == ReplicatedStorage.Ban or method == ReplicatedStorage.AdminGUI or method == ReplicatedStorage.WalkSpeedChanged) then
+            return
+        end
+        return bypass(method, ...)
+    end)
+
+    local Hallow = Window:MakeTab({Name = "Halloween Event", Icon = "rbxassetid://4370318685", PremiumOnly = false})
+    local Main = Window:MakeTab({Name = "Candy farm", Icon = "rbxassetid://4335489011", PremiumOnly = false})
+    local HallowJack = Window:MakeTab({Name = "Hallowjack farm", Icon = "rbxassetid://4370318685", PremiumOnly = false})
+
+    GravestoneLabel = HallowJack:AddLabel("Jack's Grave spawned: false")
+    KillsLabel = HallowJack:AddLabel("Killstreak kills count: 0")
+    
+    AutoGraveToggle = HallowJack:AddToggle({
+        Name = "Auto click gravestone at 10 killstreak",
+        Default = false,
+        Callback = function(Value)
+            AutoGrave = Value
+            while AutoGrave do
+                local gui = LocalPlayer.PlayerGui
+                local ks = gui:FindFirstChild("KillstreakUI")
+                if ks and ks:FindFirstChild("Killstreak") and ks.Killstreak:FindFirstChild("Kills") and ks.Killstreak.Kills:FindFirstChild("TextLabel") then
+                    if tonumber(ks.Killstreak.Kills.TextLabel.Text) >= 10 then
+                        if workspace:FindFirstChild("Gravestone") then
+                            fireclickdetector(workspace.Gravestone.ClickDetector)
+                        end
+                    end
+                end
+                wait()
+            end
+        end
+    })
+
+    AutoKSToggle = HallowJack:AddToggle({
+        Name = "Auto Farm Killstreak",
+        Default = false,
+        Callback = function(Value)
+            if HasGlove_ForToggle(Value, "Killstreak", AutoKSToggle) then
+                StartKSfarm(Value)
+            else
+                StartKSfarm(false)
+            end
+        end
+    })
+
+    Hallow:AddButton({
+        Name = "Teleport to Poltergeist portal",
+        Callback = function()
+            EnterArena(true)
+            LocalPlayer.Character:PivotTo(game:GetService("Workspace").Arena.Halloween_Decorations.ZombieIsland["Cool Model"].ZombieTeleporter.Hitbox:GetPivot())
+        end
+    })
+
+    Hallow:AddButton({
+        Name = "Teleport to Harvester portal",
+        Callback = function()
+	        EnterArena(true)
+            pcall(function()
+                EnterArena(true)
+                LocalPlayer.Character:PivotTo(game:GetService("Workspace").Arena:FindFirstChild("PimsCornMazeEntry",true).TeleportMain.Hitbox:GetPivot())
+            end)
+        end
+    })
+    
+    Hallow:AddButton({
+        Name = "Teleport to TrickOrTreat portal",
+        Callback = function()
+	        EnterArena(true)
+                LocalPlayer.Character:PivotTo(game:GetService("Workspace").Arena:FindFirstChild("TrickOrTreatTeleport",true).Hitbox:GetPivot() * CFrame.new(5,0,0))
+        end
+    })
+
+    Hallow:AddButton({
+        Name = "Server hop",
+        Callback = function()
+            SHOP()
+        end
+    })
+
+    if game.PlaceId == 6403373529 then
+        Main:AddButton({
+            Name = "Ghost invisible (you can't collect candy)",
+            Callback = function()
+                if LocalPlayer.Character:FindFirstChild("entered") == nil and LocalPlayer.leaderstats.Slaps.Value >= 666 then
+                    OGlove = LocalPlayer.leaderstats.Glove.Value
+                    fireclickdetector(workspace.Lobby.Ghost.ClickDetector)
+                    ReplicatedStorage.Ghostinvisibilityactivated:FireServer()
+                    fireclickdetector(workspace.Lobby[OGlove].ClickDetector)
+                    wait(1)
+                    for _, v in pairs(LocalPlayer.Character:GetChildren()) do
+                        if v:IsA("Part") then
+                            v.Transparency = 0.2
+                        end
+                    end
+                else
+                    OrionLib:MakeNotification({Name = "Error", Content = "You need to be in lobby and have ghost glove.", Image = "rbxassetid://7733658504", Time = 5})
+                end
+            end
+        })
+    end
+
+    Main:AddToggle({
+        Name = "Auto Candy V1",
+        Default = false,
+        Callback = function(Value)
+            AutoCandyCorn1 = Value
+            while AutoCandyCorn1 do
+                for _, candyCorn in pairs(workspace.CandyCorns:GetChildren()) do
+                    local char = LocalPlayer.Character
+                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                    if hrp and candyCorn:FindFirstChildWhichIsA("TouchTransmitter") then
+                        candyCorn.CFrame = hrp.CFrame
+                    end
+                end
+                wait()
+            end
+        end
+    })
+
+    Main:AddToggle({
+        Name = "Auto Candy V2",
+        Default = false,
+        Callback = function(Value)
+            AutoCandyCorn2 = Value
+            while AutoCandyCorn2 do
+                for _, candyCorn in pairs(workspace.CandyCorns:GetChildren()) do
+                    local char = LocalPlayer.Character
+                    local head = char and char:FindFirstChild("Head")
+                    if head and candyCorn:FindFirstChildWhichIsA("TouchTransmitter") then
+                        firetouchinterest(head, candyCorn, 0)
+                        firetouchinterest(head, candyCorn, 1)
+                    end
+                end
+                wait()
+            end
+        end
+    })
+
+    Main:AddButton({
+        Name = "Auto farm candy & serverhop",
+        Callback = function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/grasserf/public/refs/heads/main/slapbattles/queuescript/candycorn.luau"))()
+        end
+    })
+
+    game:GetService("RunService").RenderStepped:Connect(function()
+        for _, v in pairs(Players:GetChildren()) do
+	        pcall(function()
+	            if v:GetRankInGroup(9950771) >= 2 then
+	                LocalPlayer:Kick("Admin Detected." .. " [ " .. v.Name .. " ]")
+	            end
+	        end)
+        end
+
+        if workspace:FindFirstChild("Gravestone") then
+            GravestoneLabel:Set("Jack's Grave spawned: true")
+        else
+            GravestoneLabel:Set("Jack's Grave spawned: false")
+        end
+
+        local gui = LocalPlayer.PlayerGui
+        local ks = gui:FindFirstChild("KillstreakUI")
+        if ks and ks:FindFirstChild("Killstreak") and ks.Killstreak:FindFirstChild("Kills") and ks.Killstreak.Kills:FindFirstChild("TextLabel") then
+            KillsLabel:Set("Killstreak kills count: " .. ks.Killstreak.Kills.TextLabel.Text)
+        else
+            KillsLabel:Set("Killstreak kills count: nil")
+        end
+    end)
+
+elseif game.PlaceId == 103505724406848 then
+
+    local Main = Window:MakeTab({Name = "Main", Icon = "rbxassetid://4335489011", PremiumOnly = false})
+    local TP = Window:MakeTab({Name = "Server", Icon = "rbxassetid://4335489011", PremiumOnly = false})
+
+    TP:AddButton({
+        Name = "Server hop",
+        Callback = function()
+            SHOP()
+        end
+    })
+
+    TP:AddButton({
+        Name = "Teleport to regular Slap Battles",
+        Callback = function()
+            game:GetService("TeleportService"):Teleport(6403373529)
+        end
+    })
+
+    Main:AddButton({
+        Name = "Safe spot",
+        Callback = function()
+            local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+            local hrp = character:WaitForChild("HumanoidRootPart")
+            hrp.CFrame = CFrame.new(-2, 43, -13)
+            if not workspace:FindFirstChild("FlatPart") then
+                local flatPart = Instance.new("Part")
+                flatPart.Name = "FlatPart"
+                flatPart.Size = Vector3.new(50, 1, 50)
+                flatPart.Position = hrp.Position - Vector3.new(0, 1, 0)
+                flatPart.Anchored = true
+                flatPart.Transparency = 0.9
+                flatPart.Color = Color3.fromRGB(255, 255, 255)
+                flatPart.Parent = workspace
+            end
+        end
+    })
+
+    Main:AddToggle({
+        Name = "Auto kill monsters",
+        Default = false,
+        Callback = function(Value)
+            SlapAura = Value
+            while SlapAura do
+                for _, enemy in pairs(workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("Head") and enemy.Head.CFrame.Y > 10 and enemy.Head.CFrame.Y < 50 then
+                        for _, remote in pairs(ReplicatedStorage.Remotes:GetChildren()) do
+                            if remote.Name:find("Hit") and remote:IsA("RemoteEvent") then
+                                remote:FireServer(enemy.Head)
+                                if enemy.Name:find("Boss") then
+                                    for _ = 1, 50 do
+                                        remote:FireServer(enemy.Head)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                wait(1.2)
+            end
+        end
+    })
+
+    Main:AddToggle({
+        Name = "Spam glove ability",
+        Default = false,
+        Callback = function(Value)
+            SpamAbility = Value
+            while SpamAbility do
+                local glove = LocalPlayer.leaderstats.Glove.Value
+                if glove == "woah" then
+                    ReplicatedStorage.Remotes.VineThud:FireServer()
+                elseif glove == "Barrel" then
+                    ReplicatedStorage.Remotes.GeneralAbility:FireServer(unpack({[1] = {["cf"] = LocalPlayer.Character.HumanoidRootPart.CFrame}}))
+                elseif glove == "Rojo" then
+                    ReplicatedStorage.Remotes:WaitForChild("RojoAbility"):FireServer("Release", {LocalPlayer.Character.HumanoidRootPart.CFrame})
+                end
+                wait()
+            end
+        end
+    })
+
+    Main:AddButton({
+        Name = "Gamble glove (950 points required)",
+        Callback = function()
+            if CDTP == true or LocalPlayer.leaderstats.Points.Value < 950 then return end
+            CDTP = true
+            local og = LocalPlayer.Character.HumanoidRootPart.CFrame
+            LocalPlayer.Character.HumanoidRootPart.CFrame = workspace.MysterGloves:GetPivot()
+            wait(0.8)
+            for _, prompt in pairs(workspace:GetDescendants()) do
+                if prompt:IsA("ProximityPrompt") then
+                    fireproximityprompt(prompt)
+                end
+            end
+            wait(6.5)
+            for _, prompt in pairs(workspace:GetDescendants()) do
+                if prompt:IsA("ProximityPrompt") then
+                    fireproximityprompt(prompt)
+                end
+            end
+            wait(0.1)
+            LocalPlayer.Character.HumanoidRootPart.CFrame = og
+            wait(3)
+            CDTP = false
+        end
+    })
+
+elseif game.PlaceId == 92483185275059 then
+
+    local Main = Window:MakeTab({Name = "Main", Icon = "rbxassetid://4335489011", PremiumOnly = false})
+    local TP = Window:MakeTab({Name = "Server", Icon = "rbxassetid://4335489011", PremiumOnly = false})
+
+    TP:AddButton({
+        Name = "Server hop",
+        Callback = function()
+            SHOP()
+        end
+    })
+
+    TP:AddButton({
+        Name = "Teleport to regular Slap Battles",
+        Callback = function()
+            game:GetService("TeleportService"):Teleport(6403373529)
+        end
+    })
+
+    local function findPrompt(parent, promptName)
+        if not parent then return nil end
+        for _, descendant in pairs(parent:GetDescendants()) do
+            if descendant.Name == promptName and descendant:IsA("ProximityPrompt") then
+                return descendant
+            end
+        end
+        return nil
+    end
+
+    local function teleportAndActivatePrompt(char, prompt)
+        if char and char:FindFirstChild("HumanoidRootPart") and prompt then
+            char.HumanoidRootPart.CFrame = prompt.Parent.Parent.CFrame
+            wait(1)
+            fireproximityprompt(prompt)
+            return true
+        end
+        return false
+    end
+
+    local AllowToToggle = false
+    local EscapedTime = 0
+
+    Main:AddToggle({
+        Name = "Auto escape maze",
+        Default = false,
+        Callback = function(Value)
+            if not AllowToToggle then return end
+            AllowToToggle = false
+            AutoMaze = Value
+            local char = LocalPlayer.Character
+
+            while AutoMaze do
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    local maze = workspace:FindFirstChild("Maze")
+                    local endPrompt = findPrompt(maze, "EndPrompt")
+
+                    if endPrompt then
+                        if teleportAndActivatePrompt(char, endPrompt) then
+                            EscapedTime = EscapedTime + 1
+                        end
+                    else
+                        local shed = workspace:FindFirstChild("Shed")
+                        local startPrompt = findPrompt(shed, "ProximityPrompt")
+                        teleportAndActivatePrompt(char, startPrompt)
+                        if EscapedTime >= 4 or (workspace:FindFirstChild("Maze") and workspace.Maze:FindFirstChild("BarnMaze")) then
+                            break
+                        end
+                    end
+                end
+                wait(8)
+            end
+
+            wait(2)
+            for _ = 1, 20 do
+                pcall(function()
+                    LocalPlayer.Character:PivotTo(workspace.Maze.BarnMaze.ChaseWaypoints["1"].WorldPivot)
+                end)
+                wait()
+            end
+
+            local args = {[1] = "ChaseIntro"}
+            ReplicatedStorage.Remotes.Cutscene.OnComplete:FireServer(unpack(args))
+
+            while task.wait() do
+                pcall(function()
+                    LocalPlayer.Character:PivotTo(workspace.Maze.BarnMaze.CoreParts.ChaseEndDoorway.WorldPivot * CFrame.new(0, -15, 0))
+                end)
+            end
+        end
+    })
+    AllowToToggle = true
+
+elseif game.PlaceId == 82340649038345 then
+
+    local Players = game:GetService("Players")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local TeleportService = game:GetService("TeleportService")
+    local Workspace = game:GetService("Workspace")
+
+    local LocalPlayer = Players.LocalPlayer
+
+    local Main = Window:MakeTab({Name = "Main", Icon = "rbxassetid://4335489011", PremiumOnly = false})
+    local TP = Window:MakeTab({Name = "Server", Icon = "rbxassetid://4335489011", PremiumOnly = false})
+
+    TP:AddButton({
+        Name = "Server hop",
+        Callback = function()
+            SHOP()
+        end
+    })
+
+    TP:AddButton({
+        Name = "Teleport to regular Slap Battles",
+        Callback = function()
+            TeleportService:Teleport(6403373529)
+        end
+    })
+
+    local function attack(targetPart)
+        if not (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Lantern")) then return end
+        
+        local args = {
+            [1] = "Hit",
+            [2] = targetPart
+        }
+
+        LocalPlayer.Character.Lantern.Network:FireServer(unpack(args))
+        LocalPlayer.Character.Lantern:Activate()
+    end
+
+    local collectCD = false
+
+    Main:AddButton({
+        Name = "Get Candy",
+        Callback = function()
+            if collectCD then return end
+            collectCD = true
+
+            local houses = Workspace:FindFirstChild("HalloweenMap") and Workspace.HalloweenMap:FindFirstChild("Houses")
+            if houses then
+                for _, v in pairs(houses:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") and v.Enabled then
+                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            LocalPlayer.Character:PivotTo(v.Parent:GetPivot())
+                            task.wait(0.25) 
+                            
+                            fireproximityprompt(v)
+                            task.wait(2.3)
+
+                            local args = {[1] = 1}
+                            ReplicatedStorage.Modules.Common.DialogueServer.Remotes.ResondToDialogue:FireServer(unpack(args))
+
+                            local dropZonePart = Workspace:FindFirstChild("DropZone") and Workspace.DropZone:FindFirstChild("DropZone") and Workspace.DropZone.DropZone:FindFirstChild("Part")
+                            if dropZonePart then
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = dropZonePart.CFrame * CFrame.new(5000, -10, 0) * CFrame.Angles(0, 0, math.rad(90))
+	                            wait(.5)
+                                LocalPlayer.Character.HumanoidRootPart.CFrame = dropZonePart.CFrame * CFrame.new(-5, 0, 0) * CFrame.Angles(0, 0, math.rad(90))
+                            end
+                        end
+                        break
+                    end
+                end
+            end
+
+            collectCD = false
+        end
+    })
+
+    Main:AddToggle({
+        Name = "Auto attack corn minions",
+        Default = false,
+        Callback = function(Value)
+            AutoAttackCorn = Value
+
+            while AutoAttackCorn do
+                local character = LocalPlayer.Character
+                local myPos = character and character:GetPivot().Position
+
+                if myPos then
+                    local npcFolder = Workspace:FindFirstChild("NPC")
+                    if npcFolder then
+                        for _, npc in ipairs(npcFolder:GetChildren()) do
+                            local candyCorn = npc:FindFirstChild("CandyCorn")
+                            if candyCorn and candyCorn:GetAttribute("slappable") == true then
+                                local distance = (candyCorn:GetPivot().Position - myPos).Magnitude
+                                if distance <= 30 then
+                                    attack(candyCorn)
+                                end
+                            end
+                        end
+                    end
+                end
+                task.wait(0.1)
+            end
+        end
+    })
+end
