@@ -15,6 +15,7 @@ end
 
 local RJ = function()
     task.spawn(function()
+    while wait() do
         local LocalPlayer = game.Players.LocalPlayer
         local httprequest = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
         if not httprequest then
@@ -36,6 +37,7 @@ local RJ = function()
         else
             wait()
         end
+    end
     end)
 end
 
