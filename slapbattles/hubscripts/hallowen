@@ -357,13 +357,13 @@ if game.PlaceId == 6403373529 or game.PlaceId == 9015014224 or game.PlaceId == 1
 	        EnterArena(true)
             pcall(function()
                 EnterArena(true)
-                LocalPlayer.Character:PivotTo(game:GetService("Workspace").Arena:FindFirstChild("PimsCornMazeEntry",true).TeleportMain.Hitbox:GetPivot())
+                LocalPlayer.Character:PivotTo(game:GetService("Workspace"):FindFirstChild("TeleportMain",true).Hitbox:GetPivot())
             end)
         end
     })
     
     Hallow:AddButton({
-        Name = "Teleport to TrickOrTreat portal",
+        Name = "Teleport to Revenant portal",
         Callback = function()
 	        EnterArena(true)
                 LocalPlayer.Character:PivotTo(game:GetService("Workspace").Arena:FindFirstChild("TrickOrTreatTeleport",true).Hitbox:GetPivot() * CFrame.new(5,0,0))
@@ -437,7 +437,7 @@ if game.PlaceId == 6403373529 or game.PlaceId == 9015014224 or game.PlaceId == 1
     })
 
     Main:AddButton({
-        Name = "Auto farm candy & serverhop",
+        Name = "Auto farm candy & serverhop (queue auto execute)",
         Callback = function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/grasserf/public/refs/heads/main/slapbattles/queuescript/candycorn.luau"))()
         end
