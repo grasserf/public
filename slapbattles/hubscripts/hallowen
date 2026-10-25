@@ -729,7 +729,7 @@ elseif game.PlaceId == 82340649038345 then
 
                             local dropZonePart = Workspace:FindFirstChild("DropZone") and Workspace.DropZone:FindFirstChild("DropZone") and Workspace.DropZone.DropZone:FindFirstChild("Part")
                             if dropZonePart then
-                            LocalPlayer.Character.HumanoidRootPart.CFrame = dropZonePart.CFrame * CFrame.new(5000, -10, 0) * CFrame.Angles(0, 0, math.rad(90))
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = dropZonePart.CFrame * CFrame.new(-10, -10, 0) * CFrame.Angles(0, 0, math.rad(90))
 	                            wait(.5)
                                 LocalPlayer.Character.HumanoidRootPart.CFrame = dropZonePart.CFrame * CFrame.new(-5, 0, 0) * CFrame.Angles(0, 0, math.rad(90))
                             end
